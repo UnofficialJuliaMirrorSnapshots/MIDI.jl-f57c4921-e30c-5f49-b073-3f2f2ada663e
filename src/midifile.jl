@@ -17,9 +17,17 @@ mutable struct MIDIFile
 end
 # Pretty print
 function Base.show(io::IO, midi::MIDIFile) where {N}
-    print(io, "MIDIFile:\n"*
-    "  format: $(Int(midi.format))\n  tracks: $(length(midi.tracks))\n"*
-    "  tpq: $(midi.tpq)")
+	tnames = tracknames(midi)
+	s = "MIDIFile (format=$(Int(midi.format)), tpq=$(midi.tpq)) "
+	if any(!isequal(NOTRACKNAME), tnames) # we have tracknames
+		s *= "with tracks:\n"
+		for t in tnames
+			s *= " "*t*"\n"
+		end
+	else # some track doesn't have a name
+		s *= "with $(length(midi.tracks)) tracks"
+	end
+	print(io, s)
 end
 
 
@@ -153,4 +161,5 @@ on the beats per minute `bpm` and ticks per quarter note `tpq`.
 ms_per_tick(midi::MIDI.MIDIFile, bpm = BPM(midi)) = ms_per_tick(midi.tpq, bpm)
 ms_per_tick(tpq, bpm) = (1000*60)/(bpm*tpq)
 
-getnotes(midi::MIDIFile, trackno = 2) = getnotes(midi.tracks[trackno], midi.tpq)
+getnotes(midi::MIDIFile, trackno = midi.format == 0 ? 1 : 2) = 
+getnotes(midi.tracks[trackno], midi.tpq)
